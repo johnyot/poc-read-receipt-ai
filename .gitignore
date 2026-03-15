@@ -1,0 +1,13 @@
+# Build output
+/target/
+
+# Editor settings
+/.vscode/
+
+# Credentials and local environment files
+my-receipt-api-*.json
+*credentials*.json
+env.txt
+
+# Generated extraction output files
+*+*+*.txt
