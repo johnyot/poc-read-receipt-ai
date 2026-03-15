@@ -17,6 +17,7 @@
 - Java 17
 - Spring Boot 3.3.4
 - Maven
+- Log4j2
 - Google Cloud Vertex AI SDK (`google-cloud-vertexai`)
 - Gson
 
@@ -68,6 +69,11 @@
 
 ```xml
 <dependency>
+  <groupId>org.springframework.boot</groupId>
+  <artifactId>spring-boot-starter-log4j2</artifactId>
+</dependency>
+
+<dependency>
     <groupId>com.google.cloud</groupId>
     <artifactId>google-cloud-vertexai</artifactId>
     <version>1.15.0</version>
@@ -95,6 +101,7 @@ Encoding ที่ตั้งไว้ใน Maven:
 
 - Default location: `us-central1`
 - Model: `gemini-2.5-flash`
+- Logging: Log4j2 ผ่าน [src/main/resources/log4j2-spring.xml](src/main/resources/log4j2-spring.xml)
 
 สามารถแก้ model ได้ที่บรรทัดสร้าง `GenerativeModel`:
 
@@ -118,7 +125,7 @@ mvn -q -DskipTests compile
 
 ```powershell
 $env:GOOGLE_APPLICATION_CREDENTIALS = (Resolve-Path .\my-receipt-api-65cf36b6482b.json).Path
-mvn -q spring-boot:run "-Dspring-boot.run.arguments=--projectId=my-receipt-api --imagePath=test.jpg --credentialsPath=my-receipt-api-65cf36b6482b.json"
+mvn -q spring-boot:run "-Dspring-boot.run.arguments=--projectId=my-receipt-api --imagePath=input/test.jpg --credentialsPath=my-receipt-api-65cf36b6482b.json"
 ```
 
 Arguments ที่ต้องมี:
@@ -180,6 +187,7 @@ output/MBC SAWAENGHA_20260315111006_103102135.txt
 - Total amount
 - Line items (แยกรายการสินค้า)
 - Parsed JSON แบบ pretty
+- Log รายละเอียดทุกขั้นตอนผ่าน Log4j2 (`DEBUG` สำหรับ package ของโปรเจกต์)
 
 ---
 
@@ -222,6 +230,7 @@ output/MBC SAWAENGHA_20260315111006_103102135.txt
 
 - แอปหลัก: [src/main/java/com/example/receipt/ReceiptExtractorApplication.java](src/main/java/com/example/receipt/ReceiptExtractorApplication.java)
 - Maven config: [pom.xml](pom.xml)
+- Log4j2 config: [src/main/resources/log4j2-spring.xml](src/main/resources/log4j2-spring.xml)
 - เอกสารนี้: [README.md](README.md)
 
 ---
@@ -326,5 +335,91 @@ $OutputEncoding = [System.Text.UTF8Encoding]::new()
 $env:JAVA_TOOL_OPTIONS='-Dfile.encoding=UTF-8 -Dsun.stdout.encoding=UTF-8 -Dsun.stderr.encoding=UTF-8'
 $env:GOOGLE_APPLICATION_CREDENTIALS = (Resolve-Path .\my-receipt-api-65cf36b6482b.json).Path
 
-mvn -q spring-boot:run "-Dspring-boot.run.arguments=--projectId=my-receipt-api --imagePath=test2.jpg --credentialsPath=my-receipt-api-65cf36b6482b.json"
+mvn -q spring-boot:run "-Dspring-boot.run.arguments=--projectId=my-receipt-api --imagePath=input/test2.jpg --credentialsPath=my-receipt-api-65cf36b6482b.json"
+```
+
+---
+
+## 15) Command Reference
+
+ด้านล่างคือคำสั่งที่ใช้จริงระหว่างการพัฒนาและทดสอบโปรเจกต์นี้
+
+### 15.1 Compile
+
+```powershell
+mvn -q -DskipTests compile
+```
+
+### 15.2 ตั้งค่า Terminal เป็น UTF-8 (Windows)
+
+```powershell
+chcp 65001
+[Console]::InputEncoding = [System.Text.UTF8Encoding]::new()
+[Console]::OutputEncoding = [System.Text.UTF8Encoding]::new()
+$OutputEncoding = [System.Text.UTF8Encoding]::new()
+$env:JAVA_TOOL_OPTIONS='-Dfile.encoding=UTF-8 -Dsun.stdout.encoding=UTF-8 -Dsun.stderr.encoding=UTF-8'
+```
+
+### 15.3 ตั้งค่า Credential
+
+```powershell
+$env:GOOGLE_APPLICATION_CREDENTIALS = (Resolve-Path .\my-receipt-api-65cf36b6482b.json).Path
+```
+
+### 15.4 Run กับ input/test.jpg
+
+```powershell
+mvn -q spring-boot:run "-Dspring-boot.run.arguments=--projectId=my-receipt-api --imagePath=input/test.jpg --credentialsPath=my-receipt-api-65cf36b6482b.json"
+```
+
+### 15.5 Run กับ input/test2.jpg
+
+```powershell
+mvn -q spring-boot:run "-Dspring-boot.run.arguments=--projectId=my-receipt-api --imagePath=input/test2.jpg --credentialsPath=my-receipt-api-65cf36b6482b.json"
+```
+
+### 15.6 Run แบบครบชุดพร้อม UTF-8
+
+```powershell
+chcp 65001
+[Console]::InputEncoding = [System.Text.UTF8Encoding]::new()
+[Console]::OutputEncoding = [System.Text.UTF8Encoding]::new()
+$OutputEncoding = [System.Text.UTF8Encoding]::new()
+$env:JAVA_TOOL_OPTIONS='-Dfile.encoding=UTF-8 -Dsun.stdout.encoding=UTF-8 -Dsun.stderr.encoding=UTF-8'
+$env:GOOGLE_APPLICATION_CREDENTIALS=(Resolve-Path .\my-receipt-api-65cf36b6482b.json).Path
+mvn -q -DskipTests compile
+mvn -q spring-boot:run "-Dspring-boot.run.arguments=--projectId=my-receipt-api --imagePath=input/test.jpg --credentialsPath=my-receipt-api-65cf36b6482b.json"
+mvn -q spring-boot:run "-Dspring-boot.run.arguments=--projectId=my-receipt-api --imagePath=input/test2.jpg --credentialsPath=my-receipt-api-65cf36b6482b.json"
+```
+
+### 15.7 ตรวจไฟล์ผลลัพธ์ใน output/
+
+```powershell
+Get-ChildItem -File .\output\*.txt | Sort-Object LastWriteTime -Descending
+```
+
+### 15.8 ตรวจสถานะ Git
+
+```powershell
+git status --short
+git log -1 --oneline
+git remote -v
+```
+
+### 15.9 Commit และ Push
+
+```powershell
+git add .
+git commit -m "your commit message"
+git push origin main
+```
+
+### 15.10 ตัวอย่าง commit messages ที่ใช้ในโปรเจกต์นี้
+
+```text
+Initial Spring Boot Vertex AI receipt extractor (sanitized)
+Add comprehensive README with detailed code walkthrough
+Export receipt results to output folder with underscored filenames
+Move sample images into input folder and remove root-level test artifacts
+Add detailed code comments and migrate logging to Log4j2
 ```
