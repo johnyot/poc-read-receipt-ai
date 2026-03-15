@@ -29,6 +29,8 @@ import java.util.List;
 public class ReceiptExtractorApplication implements CommandLineRunner {
 
     private static final String DEFAULT_LOCATION = "us-central1";
+    // Generated text exports are written under ./output.
+    private static final Path OUTPUT_DIRECTORY = Path.of("output");
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
 
     public static void main(String[] args) {
@@ -159,8 +161,10 @@ public class ReceiptExtractorApplication implements CommandLineRunner {
         String receiptNo = receiptData != null && !isBlank(receiptData.receiptNumber) ? receiptData.receiptNumber : "UNKNOWN_RECEIPT";
         String dateTime = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss"));
 
-        String fileName = sanitizeFileNamePart(storeName) + "+" + dateTime + "+" + sanitizeFileNamePart(receiptNo) + ".txt";
-        Path outputPath = Path.of(fileName);
+        Files.createDirectories(OUTPUT_DIRECTORY);
+
+        String fileName = sanitizeFileNamePart(storeName) + "_" + dateTime + "_" + sanitizeFileNamePart(receiptNo) + ".txt";
+        Path outputPath = OUTPUT_DIRECTORY.resolve(fileName);
 
         StringBuilder content = new StringBuilder();
         content.append("==== Extracted Receipt Data ====\n");

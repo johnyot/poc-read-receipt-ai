@@ -10,4 +10,4 @@ my-receipt-api-*.json
 env.txt
 
 # Generated extraction output files
-*+*+*.txt
+/output/

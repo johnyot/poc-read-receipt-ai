@@ -7,8 +7,8 @@
 - ส่งรูป + prompt ไปยัง Gemini ผ่าน Vertex AI SDK
 - แปลงผลลัพธ์ JSON เป็น Java object
 - แสดงผลใน Console
-- Export ผลลัพธ์เป็นไฟล์ `.txt` อัตโนมัติ โดยชื่อไฟล์รูปแบบ:
-  - `<store_name>+datetime+<recieptNo>.txt`
+- Export ผลลัพธ์เป็นไฟล์ `.txt` อัตโนมัติลงโฟลเดอร์ `./output/` โดยชื่อไฟล์รูปแบบ:
+  - `<store_name>_<datetime>_<recieptNo>.txt`
 
 ---
 
@@ -56,7 +56,7 @@
 - `my-receipt-api-*.json`
 - `*credentials*.json`
 - `env.txt`
-- ไฟล์ผลลัพธ์ `*+*+*.txt`
+- โฟลเดอร์ผลลัพธ์ `/output/`
 
 ---
 
@@ -149,23 +149,24 @@ $env:JAVA_TOOL_OPTIONS='-Dfile.encoding=UTF-8 -Dsun.stdout.encoding=UTF-8 -Dsun.
 
 ## 8) รูปแบบไฟล์ Export ผลลัพธ์
 
-หลังจาก parse สำเร็จ ระบบจะสร้างไฟล์ `.txt` อัตโนมัติที่ root โปรเจกต์:
+หลังจาก parse สำเร็จ ระบบจะสร้างไฟล์ `.txt` อัตโนมัติในโฟลเดอร์ `./output/`:
 
 ```text
-<store_name>+datetime+<recieptNo>.txt
+<store_name>_<datetime>_<recieptNo>.txt
 ```
 
 ตัวอย่าง:
 
 ```text
-7-Eleven+20260315110751+R#0000872886.txt
-MBC SAWAENGHA+20260315111006+103102135.txt
+output/7-Eleven_20260315110751_R#0000872886.txt
+output/MBC SAWAENGHA_20260315111006_103102135.txt
 ```
 
 รายละเอียด:
 - `store_name` มาจาก `storeName`
 - `datetime` ใช้เวลาตอนรัน รูปแบบ `yyyyMMddHHmmss`
 - `recieptNo` ใช้ค่าจาก `receiptNumber`
+- แอปจะสร้างโฟลเดอร์ `output/` ให้อัตโนมัติถ้ายังไม่มี
 - ระบบ sanitize ตัวอักษรต้องห้ามของชื่อไฟล์อัตโนมัติ (`\ / : * ? " < > |`)
 
 ---
@@ -275,8 +276,9 @@ MBC SAWAENGHA+20260315111006+103102135.txt
   - แสดง JSON pretty เพื่อตรวจสอบความถูกต้อง
 
 - `exportResultAsTextFile(...)`
-  - สร้างชื่อไฟล์ตาม format `<store_name>+datetime+<recieptNo>.txt`
+  - สร้างชื่อไฟล์ตาม format `<store_name>_<datetime>_<recieptNo>.txt`
   - ใช้เวลา format `yyyyMMddHHmmss`
+  - สร้างโฟลเดอร์ `output/` ให้อัตโนมัติก่อนเขียนไฟล์
   - เขียนทั้ง summary และ JSON ลงไฟล์
   - แจ้ง path ไฟล์ที่ export สำเร็จทาง console
 
