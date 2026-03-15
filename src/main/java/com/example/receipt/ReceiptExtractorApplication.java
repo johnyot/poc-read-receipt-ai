@@ -141,19 +141,22 @@ public class ReceiptExtractorApplication implements CommandLineRunner {
             GenerateContentResponse response = model.generateContent(content);
             LOGGER.info("Gemini request completed successfully.");
 
-            // Step 13: Extract plain text from the SDK response and parse it into Java objects.
+            // Step 13: Read token-usage metadata returned by Gemini and log it for cost/usage tracking.
+            printTokenUsage(response);
+
+            // Step 14: Extract plain text from the SDK response and parse it into Java objects.
             String rawJson = ResponseHandler.getText(response).trim();
             LOGGER.debug("Raw JSON returned by Gemini:{}{}", System.lineSeparator(), rawJson);
 
             ReceiptData receiptData = GSON.fromJson(rawJson, ReceiptData.class);
             LOGGER.info("Gemini JSON response parsed into ReceiptData.");
 
-            // Step 14: Print a human-readable summary and export the same result to a text file.
+            // Step 15: Print a human-readable summary and export the same result to a text file.
             printReceiptData(receiptData, rawJson);
             exportResultAsTextFile(receiptData, rawJson);
             LOGGER.info("Receipt extraction flow finished successfully.");
         } catch (ApiException ex) {
-            // Step 15: Translate model availability errors into a more actionable log message.
+            // Step 16: Translate model availability errors into a more actionable log message.
             if (ex.getStatusCode() != null && ex.getStatusCode().getCode() == StatusCode.Code.NOT_FOUND) {
                 LOGGER.error("Model not found or not accessible in this project/location. modelName={}, projectId={}, location={}",
                         MODEL_NAME, cliArgs.projectId(), cliArgs.location(), ex);
@@ -167,14 +170,14 @@ public class ReceiptExtractorApplication implements CommandLineRunner {
     }
 
     private static void printReceiptData(ReceiptData receiptData, String rawJson) {
-        // Step 16: If parsing failed, log the raw payload to help with debugging prompt issues.
+        // Step 17: If parsing failed, log the raw payload to help with debugging prompt issues.
         if (receiptData == null) {
             LOGGER.warn("Model response was not valid JSON for ReceiptData.");
             LOGGER.warn("Raw response:{}{}", System.lineSeparator(), rawJson);
             return;
         }
 
-        // Step 17: Log the extracted header information for the receipt.
+        // Step 18: Log the extracted header information for the receipt.
         LOGGER.info("==== Extracted Receipt Data ====");
         LOGGER.info("Store Name    : {}", receiptData.storeName);
         LOGGER.info("Receipt Number: {}", receiptData.receiptNumber);
@@ -184,7 +187,7 @@ public class ReceiptExtractorApplication implements CommandLineRunner {
         List<LineItem> items = receiptData.lineItems == null ? new ArrayList<>() : receiptData.lineItems;
         LOGGER.info("Line Items    : {}", items.size());
 
-        // Step 18: Log each extracted line item in a readable format.
+        // Step 19: Log each extracted line item in a readable format.
         for (int i = 0; i < items.size(); i++) {
             LineItem item = items.get(i);
             LOGGER.info("  [{}]", i + 1);
@@ -194,17 +197,31 @@ public class ReceiptExtractorApplication implements CommandLineRunner {
             LOGGER.info("    Product Price: {}", item.productPrice);
         }
 
-        // Step 19: Log the final parsed JSON for audit and troubleshooting purposes.
+        // Step 20: Log the final parsed JSON for audit and troubleshooting purposes.
         LOGGER.info("Parsed JSON (pretty):{}{}", System.lineSeparator(), GSON.toJson(receiptData));
     }
 
+    private static void printTokenUsage(GenerateContentResponse response) {
+        // Step 21: Read usage metadata from the model response and report token counts to the console logs.
+        if (response == null || !response.hasUsageMetadata()) {
+            LOGGER.warn("Usage metadata was not returned by the model response.");
+            return;
+        }
+
+        GenerateContentResponse.UsageMetadata usageMetadata = response.getUsageMetadata();
+        LOGGER.info("=== Token Usage ===");
+        LOGGER.info("Input (Prompt) Tokens: {}", usageMetadata.getPromptTokenCount());
+        LOGGER.info("Output (Candidates) Tokens: {}", usageMetadata.getCandidatesTokenCount());
+        LOGGER.info("Total Tokens: {}", usageMetadata.getTotalTokenCount());
+    }
+
     private static void exportResultAsTextFile(ReceiptData receiptData, String rawJson) throws IOException {
-        // Step 20: Build a safe file name from the extracted store name, current timestamp, and receipt number.
+        // Step 22: Build a safe file name from the extracted store name, current timestamp, and receipt number.
         String storeName = receiptData != null && !isBlank(receiptData.storeName) ? receiptData.storeName : "UNKNOWN_STORE";
         String receiptNo = receiptData != null && !isBlank(receiptData.receiptNumber) ? receiptData.receiptNumber : "UNKNOWN_RECEIPT";
         String dateTime = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss"));
 
-        // Step 21: Ensure the output directory exists before writing the export file.
+        // Step 23: Ensure the output directory exists before writing the export file.
         Files.createDirectories(OUTPUT_DIRECTORY);
         LOGGER.debug("Output directory is ready at {}", OUTPUT_DIRECTORY.toAbsolutePath());
 
@@ -212,7 +229,7 @@ public class ReceiptExtractorApplication implements CommandLineRunner {
         Path outputPath = OUTPUT_DIRECTORY.resolve(fileName);
         LOGGER.info("Preparing export file at {}", outputPath.toAbsolutePath());
 
-        // Step 22: Construct the text-file content from the extracted result.
+        // Step 24: Construct the text-file content from the extracted result.
         StringBuilder content = new StringBuilder();
         content.append("==== Extracted Receipt Data ====\n");
         if (receiptData == null) {
@@ -239,7 +256,7 @@ public class ReceiptExtractorApplication implements CommandLineRunner {
             content.append(GSON.toJson(receiptData)).append("\n");
         }
 
-        // Step 23: Write the export file to disk and log the final location.
+        // Step 25: Write the export file to disk and log the final location.
         Files.writeString(outputPath, content.toString());
         LOGGER.info("Exported result file: {}", outputPath.toAbsolutePath());
     }
